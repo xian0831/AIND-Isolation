@@ -123,13 +123,17 @@ class CustomPlayer:
         # Perform any required initializations, including selecting an initial
         # move from the game board (i.e., an opening book), or returning
         # immediately if there are no legal moves
+        if not legal_moves:
+            return (-1, -1)
 
         try:
             # The search method call (alpha beta or minimax) should happen in
             # here in order to avoid timeout. The try/except block will
             # automatically catch the exception raised by the search method
             # when the timer gets close to expiring
-            pass
+            ASSUME_INITIAL_DEPTH = 1
+            score, move =  self.minimax(game,ASSUME_INITIAL_DEPTH)
+            return move
 
         except Timeout:
             # Handle any actions required at timeout, if necessary
@@ -169,11 +173,53 @@ class CustomPlayer:
                 to pass the project unit tests; you cannot call any other
                 evaluation function directly.
         """
+        # Helper method to check if it is end game
+        def is_end_game(legal_moves,depth):
+            return (not legal_moves or depth == 0)
+
+        # if timeout, exception
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
+        # get legal moves
+        legal_moves = game.get_legal_moves()
+
+        if is_end_game(legal_moves,depth):
+            return self.score(game, self), (-1, -1)
+
+        current_move = None
+
+        if maximizing_player:
+            current_score = float("-inf")
+
+            # for each leagl move
+            for move in legal_moves:
+                # get forecasted game, advanced game with each legal move
+                forecasted_game = game.forecast_move(move)
+
+                minimum_score, _ = self.minimax(forecasted_game, depth-1,False)
+
+                # Identify the maximum score branch for the current player.
+                if minimum_score >= current_score:
+                    current_move = move
+                    current_score = minimum_score
+
+        else:
+            current_score = float("inf")
+            for move in legal_moves:
+                forecasted_game = game.forecast_move(move)
+                maximum_score, _ = self.minimax(forecasted_game, depth - 1, True)
+
+                # Identify the minimum score branch for the opponent.
+                if maximum_score <= current_score:
+                    current_move = move
+                    current_score = maximum_score
+
+        return current_score, current_move
 
         # TODO: finish this function!
         raise NotImplementedError
+
+
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
         """Implement minimax search with alpha-beta pruning as described in the
@@ -213,8 +259,61 @@ class CustomPlayer:
                 to pass the project unit tests; you cannot call any other
                 evaluation function directly.
         """
+
+        # Helper method to check if it is end game
+        def is_end_game(legal_moves, depth):
+            return not legal_moves or depth == 0
+
+        # if timeout, exception
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
+        # get legal moves
+        legal_moves = game.get_legal_moves()
+
+        if is_end_game(legal_moves, depth):
+            return self.score(game, self), (-1, -1)
+
+        if maximizing_player:
+            current_score = float("-inf")
+
+            # for each leagl move
+            for move in legal_moves:
+                # get forecasted game, advanced game with each legal move
+                forecasted_game = game.forecast_move(move)
+
+                minimum_score, _ = self.alphabeta(forecasted_game, depth - 1, alpha, beta, False)
+
+                if minimum_score >= current_score:
+                    current_score = minimum_score
+
+                # prune the tree
+                if current_score >= beta:
+                    return current_score, move
+
+                # Identify the maximum score branch for the current player.
+                if current_score >= alpha:
+                    current_move = move
+                    alpha = current_score
+
+        else:
+            current_score = float("inf")
+            for move in legal_moves:
+                forecasted_game = game.forecast_move(move)
+                maximum_score, _ = self.alphabeta(forecasted_game, depth - 1, alpha, beta, True)
+
+                if maximum_score >= current_score:
+                    current_score = maximum_score
+
+                # prune the tree
+                if current_score <= alpha:
+                    return current_score, move
+
+                # Identify the minimum score branch for the opponent.
+                if current_score < beta:
+                    current_move = move
+                    beta = current_score
+
+        return current_score, current_move
 
         # TODO: finish this function!
         raise NotImplementedError

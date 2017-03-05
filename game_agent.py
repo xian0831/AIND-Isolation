@@ -186,10 +186,10 @@ class CustomPlayer:
         if is_end_game(legal_moves,depth):
             return self.score(game, self), (-1, -1)
 
-        current_move = None
+        best_move = None
 
         if maximizing_player:
-            current_score = float("-inf")
+            best_score = float("-inf")
 
             # for each leagl move
             for move in legal_moves:
@@ -199,60 +199,50 @@ class CustomPlayer:
                 minimum_score, _ = self.minimax(forecasted_game, depth-1,False)
 
                 # Identify the maximum score branch for the current player.
-                if minimum_score >= current_score:
-                    current_move = move
-                    current_score = minimum_score
+                if minimum_score >= best_score:
+                    best_move = move
+                    best_score = minimum_score
 
         else:
-            current_score = float("inf")
+            best_score = float("inf")
             for move in legal_moves:
                 forecasted_game = game.forecast_move(move)
                 maximum_score, _ = self.minimax(forecasted_game, depth - 1, True)
 
                 # Identify the minimum score branch for the opponent.
-                if maximum_score <= current_score:
-                    current_move = move
-                    current_score = maximum_score
+                if maximum_score <= best_score:
+                    best_move = move
+                    best_score = maximum_score
 
-        return current_score, current_move
+        return best_score, best_move
 
         # TODO: finish this function!
         raise NotImplementedError
 
-
-
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
         """Implement minimax search with alpha-beta pruning as described in the
         lectures.
-
         Parameters
         ----------
         game : isolation.Board
             An instance of the Isolation game `Board` class representing the
             current game state
-
         depth : int
             Depth is an integer representing the maximum number of plies to
             search in the game tree before aborting
-
         alpha : float
             Alpha limits the lower bound of search on minimizing layers
-
         beta : float
             Beta limits the upper bound of search on maximizing layers
-
         maximizing_player : bool
             Flag indicating whether the current search depth corresponds to a
             maximizing layer (True) or a minimizing layer (False)
-
         Returns
         -------
         float
             The score for the current search branch
-
         tuple(int, int)
             The best move for the current branch; (-1, -1) for no legal moves
-
         Notes
         -----
             (1) You MUST use the `self.score()` method for board evaluation
@@ -262,19 +252,22 @@ class CustomPlayer:
 
         # Helper method to check if it is end game
         def is_end_game(legal_moves, depth):
-            return not legal_moves or depth == 0
+            return (not legal_moves or depth == 0)
 
         # if timeout, exception
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
+
         # get legal moves
         legal_moves = game.get_legal_moves()
 
         if is_end_game(legal_moves, depth):
             return self.score(game, self), (-1, -1)
 
+        best_move = None
+
         if maximizing_player:
-            current_score = float("-inf")
+            best_score = float("-inf")
 
             # for each leagl move
             for move in legal_moves:
@@ -283,37 +276,30 @@ class CustomPlayer:
 
                 minimum_score, _ = self.alphabeta(forecasted_game, depth - 1, alpha, beta, False)
 
-                if minimum_score >= current_score:
-                    current_score = minimum_score
-
-                # prune the tree
-                if current_score >= beta:
-                    return current_score, move
-
                 # Identify the maximum score branch for the current player.
-                if current_score >= alpha:
-                    current_move = move
-                    alpha = current_score
+                if minimum_score > best_score:
+                    best_move = move
+                    best_score = minimum_score
+
+                if best_score >= beta:
+                    return best_score, best_move
+                alpha = max(alpha, best_score)
 
         else:
-            current_score = float("inf")
+            best_score = float("inf")
             for move in legal_moves:
                 forecasted_game = game.forecast_move(move)
                 maximum_score, _ = self.alphabeta(forecasted_game, depth - 1, alpha, beta, True)
 
-                if maximum_score >= current_score:
-                    current_score = maximum_score
-
-                # prune the tree
-                if current_score <= alpha:
-                    return current_score, move
-
                 # Identify the minimum score branch for the opponent.
-                if current_score < beta:
-                    current_move = move
-                    beta = current_score
+                if maximum_score <= best_score:
+                    best_move = move
+                    best_score = maximum_score
+                if best_score <= alpha:
+                    return best_score, best_move
+                beta = min(beta, best_score)
 
-        return current_score, current_move
+        return best_score, best_move
 
         # TODO: finish this function!
         raise NotImplementedError

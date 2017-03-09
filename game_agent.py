@@ -7,11 +7,13 @@ You must test your agent's strength against a set of agents with known
 relative strength using tournament.py and include the results in your report.
 """
 import random
+import sys
 
 
 class Timeout(Exception):
     """Subclass base exception for code clarity."""
     pass
+
 
 
 def custom_score(game, player):
@@ -37,8 +39,47 @@ def custom_score(game, player):
         The heuristic value of the current game state to the specified player.
     """
 
-    # TODO: finish this function!
-    raise NotImplementedError
+    def division_score():
+        if game.is_loser(player):
+            return float("-inf")
+
+        if game.is_winner(player):
+            return float("inf")
+
+        my_moves = len(game.get_legal_moves(player))
+        opponent_moves = len(game.get_legal_moves(game.get_opponent(player)))
+
+        if my_moves == 0:
+            my_moves = 0.00001
+        if opponent_moves == 0:
+            opponent_moves = 0.00001
+
+        return float(my_moves/opponent_moves)
+
+    def corner_hater():
+        if game.is_loser(player):
+            return float("-inf")
+
+        if game.is_winner(player):
+            return float("inf")
+
+        my_moves = len(game.get_legal_moves(player))
+        opponent_moves = len(game.get_legal_moves(game.get_opponent(player)))
+
+        if my_moves == 0:
+            my_moves = 0.00001
+        if opponent_moves == 0:
+            opponent_moves = 0.00001
+
+        return float(my_moves/opponent_moves)
+
+    # custom function 1.
+    # return float(len(game.get_legal_moves(player)))
+    #
+    # my_moves = len(game.get_legal_moves(player))
+    # opponent_moves = len(game.get_legal_moves(game.get_opponent(player)))
+
+    return division_score()
 
 
 class CustomPlayer:
@@ -118,29 +159,34 @@ class CustomPlayer:
 
         self.time_left = time_left
 
-        # TODO: finish this function!
-
         # Perform any required initializations, including selecting an initial
         # move from the game board (i.e., an opening book), or returning
         # immediately if there are no legal moves
         if not legal_moves:
-            return (-1, -1)
+            return -1, -1
+
+        # placeholder for end result
+        result = None
 
         try:
             # The search method call (alpha beta or minimax) should happen in
             # here in order to avoid timeout. The try/except block will
             # automatically catch the exception raised by the search method
             # when the timer gets close to expiring
-            ASSUME_INITIAL_DEPTH = 1
-            score, move =  self.minimax(game,ASSUME_INITIAL_DEPTH)
-            return move
 
+            if self.iterative:
+                # if too deep, timeout exception will be trigger
+                for depth in range(sys.maxsize):
+                    _, move = self.minimax(game, depth)
+                    result = move
+                return
+            else:
+                _, result = self.minimax(game, self.search_depth)
         except Timeout:
             # Handle any actions required at timeout, if necessary
             pass
+        return result
 
-        # Return the best move from the last completed search iteration
-        raise NotImplementedError
 
     def minimax(self, game, depth, maximizing_player=True):
         """Implement the minimax search algorithm as described in the lectures.
@@ -174,7 +220,7 @@ class CustomPlayer:
                 evaluation function directly.
         """
         # Helper method to check if it is end game
-        def is_end_game(legal_moves,depth):
+        def is_end_game(legal_moves, depth):
             return (not legal_moves or depth == 0)
 
         # if timeout, exception
@@ -183,7 +229,7 @@ class CustomPlayer:
         # get legal moves
         legal_moves = game.get_legal_moves()
 
-        if is_end_game(legal_moves,depth):
+        if is_end_game(legal_moves, depth):
             return self.score(game, self), (-1, -1)
 
         best_move = None
@@ -196,7 +242,7 @@ class CustomPlayer:
                 # get forecasted game, advanced game with each legal move
                 forecasted_game = game.forecast_move(move)
 
-                minimum_score, _ = self.minimax(forecasted_game, depth-1,False)
+                minimum_score, _ = self.minimax(forecasted_game, depth - 1, False)
 
                 # Identify the maximum score branch for the current player.
                 if minimum_score >= best_score:
@@ -215,9 +261,6 @@ class CustomPlayer:
                     best_score = maximum_score
 
         return best_score, best_move
-
-        # TODO: finish this function!
-        raise NotImplementedError
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
         """Implement minimax search with alpha-beta pruning as described in the
@@ -300,6 +343,3 @@ class CustomPlayer:
                 beta = min(beta, best_score)
 
         return best_score, best_move
-
-        # TODO: finish this function!
-        raise NotImplementedError

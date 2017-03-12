@@ -38,14 +38,13 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
 
     def division_score():
-        if game.is_loser(player):
-            return float("-inf")
-
-        if game.is_winner(player):
-            return float("inf")
-
         my_moves = len(game.get_legal_moves(player))
         opponent_moves = len(game.get_legal_moves(game.get_opponent(player)))
 
@@ -56,30 +55,62 @@ def custom_score(game, player):
 
         return float(my_moves/opponent_moves)
 
-    def corner_hater():
-        if game.is_loser(player):
-            return float("-inf")
+    def see_the_future():
 
-        if game.is_winner(player):
-            return float("inf")
+        my_moves = game.get_legal_moves(player)
+        opponent_moves = game.get_legal_moves(game.get_opponent(player))
 
-        my_moves = len(game.get_legal_moves(player))
-        opponent_moves = len(game.get_legal_moves(game.get_opponent(player)))
 
-        if my_moves == 0:
-            my_moves = 0.00001
-        if opponent_moves == 0:
-            opponent_moves = 0.00001
+        forecasted_game_opponent_moves = []
 
-        return float(my_moves/opponent_moves)
+        for move in opponent_moves:
+            forecasted_game = game.forecast_move(move)
+            forecasted_game_opponent_moves.append(forecasted_game.get_legal_moves(game.get_opponent(player)))
 
-    # custom function 1.
-    # return float(len(game.get_legal_moves(player)))
-    #
-    # my_moves = len(game.get_legal_moves(player))
-    # opponent_moves = len(game.get_legal_moves(game.get_opponent(player)))
+        my_moves_score = len(my_moves)
+        opponent_moves_score = len(opponent_moves)
 
-    return division_score()
+        if my_moves_score == 0:
+            my_moves_score = 0.00001
+        if opponent_moves_score == 0:
+            opponent_moves_score = 0.00001
+
+        return float(my_moves_score/opponent_moves_score - len(forecasted_game_opponent_moves)-len(opponent_moves))
+
+    def see_the_future_improved():
+
+
+        my_moves = game.get_legal_moves(player)
+        opponent_moves = game.get_legal_moves(game.get_opponent(player))
+
+        # forecasted_game = game.forecast_move(move)
+
+        forecasted_game_my_move = []
+
+        for move in my_moves:
+            forecasted_game = game.forecast_move(move)
+            forecasted_game_my_move.append(forecasted_game.get_legal_moves(player))
+
+        forecasted_game_opponent_moves = []
+
+        for move in opponent_moves:
+            forecasted_game = game.forecast_move(move)
+            forecasted_game_opponent_moves.append(forecasted_game.get_legal_moves(game.get_opponent(player)))
+
+        my_moves_score = len(my_moves)
+        opponent_moves_score = len(opponent_moves)
+
+        if my_moves_score == 0:
+            my_moves_score = 0.00001
+        if opponent_moves_score == 0:
+            opponent_moves_score = 0.00001
+
+        if len(game.get_blank_spaces()) > 20:
+            return float(my_moves_score/opponent_moves_score + len(forecasted_game_my_move)+my_moves_score)
+        else:
+            return float(my_moves_score / opponent_moves_score - len(forecasted_game_opponent_moves) - opponent_moves_score)
+
+    return see_the_future_improved()
 
 
 class CustomPlayer:
